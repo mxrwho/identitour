@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fluid Audio Walk</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: radial-gradient(circle at center, #b3e5fc, #e1f5fe);
+      font-family: sans-serif;
+    }
+    #canvas {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+    }
+    .point {
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: lightblue;
+      text-align: center;
+      line-height: 40px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.3s;
+      animation: colorShift 10s infinite alternate;
+    }
+    .point::after {
+      content: "";
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: rgba(2, 136, 209, 0.3);
+      animation: ripple 4s infinite;
+    }
+    .point-label {
+      position: absolute;
+      color: #444;
+      font-size: 14px;
+      text-align: center;
+      transform: translate(-50%, 0);
+      margin-top: 45px;
+      width: 80px;
+    }
+    .point.active {
+      background-color: #0288d1;
+      color: white;
+      transform: scale(1.3);
+    }
+    .point.mask-active {
+      background-color: #d32f2f !important;
+      box-shadow: 0 0 10px rgba(211, 47, 47, 0.6);
+    }
+    .connector {
+      position: absolute;
+      background: rgba(0, 0, 0, 0.2);
+      height: 2px;
+      transform-origin: left center;
+    }
+    #mixButton, #toggleMasksButton {
+      position: fixed;
+      bottom: 20px;
+      padding: 15px 25px;
+      font-size: 16px;
+      background-color: #0288d1;
+      color: white;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      z-index: 10;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      transition: background-color 0.3s;
+    }
+    #mixButton:hover, #toggleMasksButton:hover {
+      background-color: #0277bd;
+    }
+    #mixButton { right: 20px; }
+    #toggleMasksButton { left: 20px; }
+
+    @keyframes ripple {
+      0% { transform: scale(1); opacity: 0.5; }
+      100% { transform: scale(3); opacity: 0; }
+    }
+    @keyframes colorShift {
+      0% { background-color: #81d4fa; }
+      50% { background-color: #4fc3f7; }
+      100% { background-color: #81d4fa; }
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas">
+    <button id="mixButton">Mix</button>
+    <button id="toggleMasksButton">Toggle Masks</button>
+
+    <div class="point" id="point1" style="top: 20%; left: 50%; animation-delay: 0s;"></div>
+    <div class="point-label" style="top: 20%; left: 50%;">Smart</div>
+
+    <div class="point" id="point2" style="top: 30%; left: 70%; animation-delay: 1s;"></div>
+    <div class="point-label" style="top: 30%; left: 70%;">Complicated</div>
+
+    <div class="point" id="point3" style="top: 50%; left: 80%; animation-delay: 2s;"></div>
+    <div class="point-label" style="top: 50%; left: 80%;">Naive</div>
+
+    <div class="point" id="point4" style="top: 70%; left: 70%; animation-delay: 3s;"></div>
+    <div class="point-label" style="top: 70%; left: 70%;">Crazy</div>
+
+    <div class="point" id="point5" style="top: 80%; left: 50%; animation-delay: 1.5s;"></div>
+    <div class="point-label" style="top: 80%; left: 50%;">Caring</div>
+
+    <div class="point" id="point6" style="top: 70%; left: 30%; animation-delay: 0.5s;"></div>
+    <div class="point-label" style="top: 70%; left: 30%;">Wild</div>
+
+    <div class="point" id="point7" style="top: 50%; left: 20%; animation-delay: 2.5s;"></div>
+    <div class="point-label" style="top: 50%; left: 20%;">Stubborn</div>
+
+    <div class="point" id="point8" style="top: 30%; left: 30%; animation-delay: 3.5s;"></div>
+    <div class="point-label" style="top: 30%; left: 30%;">Strong</div>
+
+    <canvas id="lines" style="position:absolute; top:0; left:0; z-index:-1;"></canvas>
+  </div>
+
+  <audio id="audio1" src="audio/smart.mp3"></audio>
+  <audio id="audio2" src="audio/complicated.mp3"></audio>
+  <audio id="audio3" src="audio/naive.mp3"></audio>
+  <audio id="audio4" src="audio/crazy.mp3"></audio>
+  <audio id="audio5" src="audio/caring.mp3"></audio>
+  <audio id="audio6" src="audio/wild.mp3"></audio>
+  <audio id="audio7" src="audio/stubborn.mp3"></audio>
+  <audio id="audio8" src="audio/strong.mp3"></audio>
+
+  <script>
+    const locations = [
+      { id: "point1", coords: { lat: 40.7128, lng: -74.006 }, audioId: "audio1" },
+      { id: "point2", coords: { lat: 40.7132, lng: -74.005 }, audioId: "audio2" },
+      { id: "point3", coords: { lat: 40.7140, lng: -74.004 }, audioId: "audio3" },
+      { id: "point4", coords: { lat: 40.7145, lng: -74.006 }, audioId: "audio4" },
+      { id: "point5", coords: { lat: 40.7135, lng: -74.008 }, audioId: "audio5" },
+      { id: "point6", coords: { lat: 40.7122, lng: -74.009 }, audioId: "audio6" },
+      { id: "point7", coords: { lat: 40.7118, lng: -74.008 }, audioId: "audio7" },
+      { id: "point8", coords: { lat: 40.7115, lng: -74.007 }, audioId: "audio8" }
+    ];
+
+    let masksActive = false;
+
+    navigator.geolocation.watchPosition(pos => {
+      const userLat = pos.coords.latitude;
+      const userLng = pos.coords.longitude;
+
+      locations.forEach(loc => {
+        const dist = getDistance(userLat, userLng, loc.coords.lat, loc.coords.lng);
+        const point = document.getElementById(loc.id);
+
+        if (dist < 3) {
+          if (!point.classList.contains("active")) {
+            point.classList.add("active");
+            document.getElementById(loc.audioId).play();
+          }
+        } else {
+          point.classList.remove("active");
+        }
+      });
+    });
+
+    locations.forEach(loc => {
+      const point = document.getElementById(loc.id);
+      point.addEventListener('click', () => {
+        const audio = document.getElementById(loc.audioId);
+        audio.currentTime = 0;
+        audio.play();
+      });
+    });
+
+    document.getElementById('mixButton').addEventListener('click', () => {
+      locations.forEach((loc, index) => {
+        setTimeout(() => {
+          const audio = document.getElementById(loc.audioId);
+          audio.currentTime = 0;
+          audio.play();
+        }, index * 400);
+      });
+    });
+
+    document.getElementById('toggleMasksButton').addEventListener('click', () => {
+      masksActive = !masksActive;
+      locations.forEach(loc => {
+        const point = document.getElementById(loc.id);
+        point.classList.toggle('mask-active', masksActive);
+      });
+    });
+
+    function getDistance(userLat, userLng, targetLat, targetLng) {
+      const toRad = x => (x * Math.PI) / 180;
+      const R = 6371;
+      const dLat = toRad(targetLat - userLat);
+      const dLng = toRad(targetLng - userLng);
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRad(userLat)) * Math.cos(toRad(targetLat)) *
+        Math.sin(dLng / 2) * Math.sin(dLng / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c * 1000;
+    }
+
+    function drawAnimatedLines() {
+      const canvas = document.getElementById('lines');
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      function loop() {
+        const points = locations.map(loc => document.getElementById(loc.id).getBoundingClientRect());
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = `rgba(0,0,0,${0.2 + 0.1 * Math.sin(Date.now() / 1000)})`;
+        ctx.lineWidth = 2;
+        for (let i = 0; i < points.length; i++) {
+          const a = points[i];
+          const b = points[(i + 1) % points.length];
+          ctx.beginPath();
+          ctx.moveTo(a.left + 20, a.top + 20);
+          ctx.lineTo(b.left + 20, b.top + 20);
+          ctx.stroke();
+        }
+        requestAnimationFrame(loop);
+      }
+
+      loop();
+    }
+
+    window.onload = drawAnimatedLines;
+  </script>
+</body>
+</html>
