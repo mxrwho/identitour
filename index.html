@@ -152,155 +152,170 @@
   <audio id="definition8" src="audio/strong_Now.mp3"></audio>
 
   <script>
-    let startAudioFinished = false;
-    let isMixMode = false;
+  let startAudioFinished = false;
+  let isMixMode = false;
+  const playedGeoPoints = new Set();
 
-    document.getElementById('mixButton').addEventListener('click', () => {
-        isMixMode = !isMixMode;
-        console.log('Mix mode:', isMixMode ? 'ON' : 'OFF'); 
-        document.getElementById('mixButton').textContent = isMixMode ? 'Mix (ON)' : 'Mix';
-    });
+  document.getElementById('mixButton').addEventListener('click', () => {
+    isMixMode = !isMixMode;
+    console.log('Mix mode:', isMixMode ? 'ON' : 'OFF');
+    document.getElementById('mixButton').textContent = isMixMode ? 'Mix (ON)' : 'Mix';
+  });
 
-    document.getElementById('startButton').addEventListener('click', () => {
-      document.getElementById('startScreen').style.display = 'none';
-      document.getElementById('canvas').style.display = 'block';
-
-      const startAudio = document.getElementById('startAudio');
-        if (startAudio) {
-            startAudio.load();
-            startAudio.onended = () => {
-                startAudioFinished = true;
-                console.log('Start audio finished, geolocation audio can start');
-            };
-            startAudio.play().catch(err => {
-                console.error("Start audio could not be played:", err);
-                startAudioFinished = true;
-            });
-        }
-    });
-
-      const geoAudioIds = ['audio1', 'audio2', 'audio3', 'audio4', 'audio5', 'audio6', 'audio7', 'audio8'];
-
-      geoAudioIds.forEach(id => {
-        const audio = document.getElementById(id);
-        if (audio) {
-            audio.load();
-            audio.play().then(() => {
-                audio.pause();
-                audio.currentTime = 0;
-            }).catch(err => {
-                console.error(`Failed to pre-play audio "${id}":`, err);
-            });
-        }
-    });
-
-    function playDefinition(audioIndex, pointId) {
-      const audio = document.getElementById('definition' + audioIndex);
-      const point = document.getElementById(pointId);
-
-      document.querySelectorAll('.point').forEach(p => p.classList.remove('active'));
-
-      if (audio) {
-        audio.play();
-        audio.onended = () => {
-          if (point) {
-            point.classList.add('active');
-            checkAllPointsActivated();
-          } else {
-            console.warn(`Element with ID '${pointId}' not found.`);
-          }
-        };
-      }
-    }
-
-    function checkAllPointsActivated() {
-      const allActive = [...document.querySelectorAll('.point')].every(p => p.classList.contains('active'));
-      if (allActive) {
-        const completeAudio = document.getElementById('completeAudio');
-        if (completeAudio) completeAudio.play();
-
-        document.querySelectorAll('.point').forEach(p => {
-          p.style.pointerEvents = 'none';
+  document.getElementById('startButton').addEventListener('click', () => {
+    if (typeof AudioContext !== 'undefined' || typeof webkitAudioContext !== 'undefined') {
+      const audioCtx = new (AudioContext || webkitAudioContext)();
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume().then(() => {
+          console.log('AudioContext resumed');
         });
       }
     }
 
-    function initPointListeners() {
-      for (let i = 1; i <= 8; i++) {
-        const point = document.getElementById('point' + i);
-        if (point) {
-          point.addEventListener('click', () => {
-            const audio = document.getElementById('audio' + i);
-            if (audio) audio.play();
-          });
-        }
-      }
-    }
+    document.getElementById('startScreen').style.display = 'none';
+    document.getElementById('canvas').style.display = 'block';
 
-    document.getElementById('stopButton').addEventListener('click', () => {
-        isMixMode = false;
-        document.getElementById('mixButton').textContent = 'Mix';
+    const startAudio = document.getElementById('startAudio');
+    if (startAudio) {
+      startAudio.load();
+      startAudio.onended = () => {
+        startAudioFinished = true;
+        console.log('Start audio finished, geolocation audio can start');
 
-        document.querySelectorAll('audio').forEach(audio => {
-            audio.pause();
-            audio.currentTime = 0;
-        });
-    });
+        // Start watching position only after startAudio finishes
+        if (navigator.geolocation) {
+          navigator.geolocation.watchPosition(position => {
+            const { latitude, longitude } = position.coords;
+            if (!startAudioFinished) return;
 
-    window.addEventListener('load', initPointListeners);
+            geoPoints.forEach(point => {
+              // Adjust longitude distance by cos(latitude)
+              const latDiff = (latitude - point.lat) * 111000;
+              const lonDiff = (longitude - point.lon) * 111000 * Math.cos(latitude * Math.PI / 180);
+              const dist = Math.sqrt(latDiff * latDiff + lonDiff * lonDiff);
 
-    const geoPoints = [
-      { lat: 52.09025, lon: 4.27061, radius: 3, audioId: 'audio1', pointId: 'point1' },
-      { lat: 52.09029, lon: 4.27034, radius: 3, audioId: 'audio2', pointId: 'point2' },
-      { lat: 52.09032, lon: 4.27005, radius: 3, audioId: 'audio3', pointId: 'point3' },
-      { lat: 52.09031, lon: 4.26976, radius: 3, audioId: 'audio4', pointId: 'point4' },
-      { lat: 52.09031, lon: 4.26941, radius: 3, audioId: 'audio5', pointId: 'point5' },
-      { lat: 52.09027, lon: 4.26919, radius: 3, audioId: 'audio6', pointId: 'point6' },
-      { lat: 52.09027, lon: 4.26884, radius: 3, audioId: 'audio7', pointId: 'point7' },
-      { lat: 52.09023, lon: 4.26856, radius: 3, audioId: 'audio8', pointId: 'point8' }
-    ];
+              if (dist < point.radius) {
+                const audio = document.getElementById(point.audioId);
+                const domPoint = document.getElementById(point.pointId);
 
-const playedGeoPoints = new Set();
+                if (audio && domPoint && audio.paused && !playedGeoPoints.has(point.audioId)) {
 
-    if (navigator.geolocation) {
-      navigator.geolocation.watchPosition(position => {
-        const { latitude, longitude } = position.coords;
-        if (!startAudioFinished) return;
+                  if (!isMixMode) {
+                    geoPoints.forEach(other => {
+                      if (other.audioId !== point.audioId) {
+                        const otherAudio = document.getElementById(other.audioId);
+                        if (otherAudio) {
+                          otherAudio.pause();
+                          otherAudio.currentTime = 0;
+                        }
+                      }
+                    });
+                  }
+                  audio.play();
+                  domPoint.classList.add('active');
+                  checkAllPointsActivated();
+                  playedGeoPoints.add(point.audioId);
 
-        geoPoints.forEach(point => {
-          const dist = Math.sqrt(Math.pow((latitude - point.lat) * 111000, 2) + Math.pow((longitude - point.lon) * 111000, 2));
-          
-          if (dist < point.radius) {
-            const audio = document.getElementById(point.audioId);
-            const domPoint = document.getElementById(point.pointId);
-
-            if (audio && domPoint && audio.paused && !playedGeoPoints.has(point.audioId)) {
-        
-        if (!isMixMode) {
-          geoPoints.forEach(other => {
-            if (other.audioId !== point.audioId) {
-              const otherAudio = document.getElementById(other.audioId);
-              if (otherAudio) {
-                otherAudio.pause();
-                otherAudio.currentTime = 0;
+                  audio.onended = () => {
+                    playedGeoPoints.delete(point.audioId);
+                    domPoint.classList.remove('active');
+                  };
+                }
               }
-            }
-          });
+            });
+          }, error => {
+            console.error('Geolocation error:', error.message);
+            alert("Geolocation error: " + error.message);
+          }, { enableHighAccuracy: true });
+        } else {
+          alert("Geolocation is not supported by this browser.");
         }
-              audio.play();
-              domPoint.classList.add('active');
-              checkAllPointsActivated();
-              playedGeoPoints.add(point.audioId);
-            }
-          }
-        });
-      }, error => {
-        console.error('Geolocation error:', error.message);
-        alert("Geolocation error: " + error.message);
-      }, { enableHighAccuracy: true });
-    } else {
-      alert("Geolocation is not supported by this browser.");
+      };
+      startAudio.play().catch(err => {
+        console.error("Start audio could not be played:", err);
+        startAudioFinished = true;
+      });
     }
-  </script>
-</body>
-</html>
+  });
+
+  const geoAudioIds = ['audio1', 'audio2', 'audio3', 'audio4', 'audio5', 'audio6', 'audio7', 'audio8'];
+
+  geoAudioIds.forEach(id => {
+    const audio = document.getElementById(id);
+    if (audio) {
+      audio.load();
+      audio.play().then(() => {
+        audio.pause();
+        audio.currentTime = 0;
+      }).catch(err => {
+        console.error(`Failed to pre-play audio "${id}":`, err);
+      });
+    }
+  });
+
+  function playDefinition(audioIndex, pointId) {
+    const audio = document.getElementById('definition' + audioIndex);
+    const point = document.getElementById(pointId);
+
+    document.querySelectorAll('.point').forEach(p => p.classList.remove('active'));
+
+    if (audio) {
+      audio.play();
+      audio.onended = () => {
+        if (point) {
+          point.classList.add('active');
+          checkAllPointsActivated();
+        } else {
+          console.warn(`Element with ID '${pointId}' not found.`);
+        }
+      };
+    }
+  }
+
+  function checkAllPointsActivated() {
+    const allActive = [...document.querySelectorAll('.point')].every(p => p.classList.contains('active'));
+    if (allActive) {
+      const completeAudio = document.getElementById('completeAudio');
+      if (completeAudio) completeAudio.play();
+
+      document.querySelectorAll('.point').forEach(p => {
+        p.style.pointerEvents = 'none';
+      });
+    }
+  }
+
+  function initPointListeners() {
+    for (let i = 1; i <= 8; i++) {
+      const point = document.getElementById('point' + i);
+      if (point) {
+        point.addEventListener('click', () => {
+          const audio = document.getElementById('audio' + i);
+          if (audio) audio.play();
+        });
+      }
+    }
+  }
+
+  document.getElementById('stopButton').addEventListener('click', () => {
+    isMixMode = false;
+    document.getElementById('mixButton').textContent = 'Mix';
+
+    document.querySelectorAll('audio').forEach(audio => {
+      audio.pause();
+      audio.currentTime = 0;
+    });
+  });
+
+  window.addEventListener('load', initPointListeners);
+
+  const geoPoints = [
+    { lat: 52.09025, lon: 4.27061, radius: 3, audioId: 'audio1', pointId: 'point1' },
+    { lat: 52.09029, lon: 4.27034, radius: 3, audioId: 'audio2', pointId: 'point2' },
+    { lat: 52.09032, lon: 4.27005, radius: 3, audioId: 'audio3', pointId: 'point3' },
+    { lat: 52.09031, lon: 4.26976, radius: 3, audioId: 'audio4', pointId: 'point4' },
+    { lat: 52.09031, lon: 4.26941, radius: 3, audioId: 'audio5', pointId: 'point5' },
+    { lat: 52.09027, lon: 4.26919, radius: 3, audioId: 'audio6', pointId: 'point6' },
+    { lat: 52.09027, lon: 4.26884, radius: 3, audioId: 'audio7', pointId: 'point7' },
+    { lat: 52.09023, lon: 4.26856, radius: 3, audioId: 'audio8', pointId: 'point8' }
+  ];
+</script>
