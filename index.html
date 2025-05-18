@@ -164,6 +164,18 @@
     document.getElementById('startButton').addEventListener('click', () => {
       document.getElementById('startScreen').style.display = 'none';
       document.getElementById('canvas').style.display = 'block';
+
+      const startAudio = document.getElementById('startAudio');
+    if (startAudio) {
+        startAudio.onended = () => {
+            startAudioFinished = true;
+            console.log('Start audio finished, geolocation audio can start');
+            };
+            startAudio.play().catch(err => {
+            console.error("Start audio could not be played:", err);
+            startAudioFinished = true; // fallback to prevent blocking rest of flow
+            });
+        }
     });
 
       const geoAudioIds = ['audio1', 'audio2', 'audio3', 'audio4', 'audio5', 'audio6', 'audio7', 'audio8'];
@@ -180,18 +192,6 @@
             });
         }
     });
-
-        const startAudio = document.getElementById('startAudio');
-        if (startAudio) {
-                startAudio.onended = () => {
-                    startAudioFinished = true;
-                    console.log('Start audio finished, geolocation audio can start');
-                };
-                startAudio.play().catch(err => {
-                console.error("Start audio could not be played:", err);
-                startAudioFinished = true;
-            });
-        }
 
     function playDefinition(audioIndex, pointId) {
       const audio = document.getElementById('definition' + audioIndex);
