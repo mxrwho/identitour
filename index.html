@@ -160,7 +160,7 @@
       const startAudio = document.getElementById('startAudio');
       if (startAudio){
         startAudio.play();
-        startAudio.opended = () => {
+        startAudio.onended = () => {
             startAudioFinished = true;
             };
         }
