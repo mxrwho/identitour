@@ -153,11 +153,19 @@
 
   <script>
     let startAudioFinished = false;
-    
+    let isMixMode = false;
+
+    document.getElementById('mixButton').addEventListener('click', () => {
+        isMixMode = !isMixMode;
+        console.log('Mix mode:', isMixMode ? 'ON' : 'OFF'); 
+        document.getElementById('mixButton').textContent = isMixMode ? 'Mix (ON)' : 'Mix';
+    });
+
     document.getElementById('startButton').addEventListener('click', () => {
       document.getElementById('startScreen').style.display = 'none';
       document.getElementById('canvas').style.display = 'block';
-     
+    });
+
       const geoAudioIds = ['audio1', 'audio2', 'audio3', 'audio4', 'audio5', 'audio6', 'audio7', 'audio8'];
 
       geoAudioIds.forEach(id => {
@@ -167,8 +175,9 @@
             audio.play().then(() => {
                 audio.pause();
                 audio.currentTime = 0;
-            }).catch(() => {
-        });
+            }).catch(err => {
+                console.error(`Failed to pre-play audio "${id}":`, err);
+            });
         }
     });
 
@@ -183,8 +192,6 @@
                 startAudioFinished = true;
             });
         }
-
-    });
 
     function playDefinition(audioIndex, pointId) {
       const audio = document.getElementById('definition' + audioIndex);
@@ -230,10 +237,13 @@
     }
 
     document.getElementById('stopButton').addEventListener('click', () => {
-      document.querySelectorAll('audio').forEach(audio => {
-        audio.pause();
-        audio.currentTime = 0;
-      });
+        isMixMode = false;
+        document.getElementById('mixButton').textContent = 'Mix';
+
+        document.querySelectorAll('audio').forEach(audio => {
+            audio.pause();
+            audio.currentTime = 0;
+        });
     });
 
     window.addEventListener('load', initPointListeners);
@@ -258,10 +268,24 @@ const playedGeoPoints = new Set();
 
         geoPoints.forEach(point => {
           const dist = Math.sqrt(Math.pow((latitude - point.lat) * 111000, 2) + Math.pow((longitude - point.lon) * 111000, 2));
+          
           if (dist < point.radius) {
             const audio = document.getElementById(point.audioId);
             const domPoint = document.getElementById(point.pointId);
+
             if (audio && domPoint && audio.paused && !playedGeoPoints.has(point.audioId)) {
+        
+        if (!isMixMode) {
+          geoPoints.forEach(other => {
+            if (other.audioId !== point.audioId) {
+              const otherAudio = document.getElementById(other.audioId);
+              if (otherAudio) {
+                otherAudio.pause();
+                otherAudio.currentTime = 0;
+              }
+            }
+          });
+        }
               audio.play();
               domPoint.classList.add('active');
               checkAllPointsActivated();
