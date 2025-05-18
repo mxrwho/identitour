@@ -152,6 +152,8 @@
   <audio id="definition8" src="audio/strong_Now.mp3"></audio>
 
   <script>
+    let startAudioFinished = false;
+    
     document.getElementById('startButton').addEventListener('click', () => {
       document.getElementById('startScreen').style.display = 'none';
       document.getElementById('canvas').style.display = 'block';
@@ -169,14 +171,16 @@
         });
         }
     });
+
         const startAudio = document.getElementById('startAudio');
-        if (startAudio){
-            startAudio.play().then(() => {
+        if (startAudio) {
                 startAudio.onended = () => {
                     startAudioFinished = true;
+                    console.log('Start audio finished, geolocation audio can start');
                 };
-            }).catch(err => {
+                startAudio.play().catch(err => {
                 console.error("Start audio could not be played:", err);
+                startAudioFinished = true;
             });
         }
 
@@ -246,7 +250,6 @@
     ];
 
 const playedGeoPoints = new Set();
-let startAudioFinished = false;
 
     if (navigator.geolocation) {
       navigator.geolocation.watchPosition(position => {
