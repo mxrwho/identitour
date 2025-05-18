@@ -152,7 +152,6 @@
   <audio id="definition8" src="audio/strong_Now.mp3"></audio>
 
   <script>
-  let startAudioFinished = false;
   let isMixMode = false;
   const playedGeoPoints = new Set();
 
@@ -179,17 +178,13 @@
     if (startAudio) {
       startAudio.load();
       startAudio.onended = () => {
-        startAudioFinished = true;
         console.log('Start audio finished, geolocation audio can start');
 
-        // Start watching position only after startAudio finishes
         if (navigator.geolocation) {
           navigator.geolocation.watchPosition(position => {
             const { latitude, longitude } = position.coords;
-            if (!startAudioFinished) return;
 
             geoPoints.forEach(point => {
-              // Adjust longitude distance by cos(latitude)
               const latDiff = (latitude - point.lat) * 111000;
               const lonDiff = (longitude - point.lon) * 111000 * Math.cos(latitude * Math.PI / 180);
               const dist = Math.sqrt(latDiff * latDiff + lonDiff * lonDiff);
