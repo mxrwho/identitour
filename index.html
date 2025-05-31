@@ -15,31 +15,10 @@
       padding: 2em;
       text-align: center;
     }
-    button {
-      margin: 0.5em;
+    #button {
+      margin: 0.5em 1em;
       padding: 0.5em 1em;
       font-size: 1em;
-    }
-    .definitions {
-      position: absolute;
-      top: 10%;
-      width: 15%;
-    }
-    .definitions.left {
-      left: 5%;
-    }
-    .definitions.right {
-      right: 5%;
-    }
-    .definitions h2 {
-      font-size: 1.2em;
-      margin-bottom: 0.5em;
-    }
-    .definition-button {
-      display: block;
-      margin: 0.5em auto;
-      width: 100%;
-      padding: 0.5em;
     }
     #canvas {
       position: relative;
@@ -56,8 +35,12 @@
       transition: background-color 0.3s, transform 0.3s;
       cursor: pointer;
     }
-    .point.active {
+    .point.transformation-active {
       background-color: red;
+      transform: scale(2);
+    }
+    .point.definition-active {
+      background-color: black;
       transform: scale(2);
     }
     .point-label {
@@ -66,52 +49,35 @@
       transform: translate(-50%, -50%);
       white-space: nowrap;
     }
-    #mixButton, #toggleMasksButton, #stopButton {
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-      padding: 1em;
-      font-size: 1em;
+
+@media (max-width: 600px) {
+    #controls {
+        flex-direction: column;
+        align-items: center;
+        gap: 1em;
+        bottom: 5%;
+        left: 50%;
+        transform: translateX(-50%);
     }
-    #mixButton {
-      bottom: 15%;
-    }
-    #toggleMasksButton {
-      bottom: 10%;
-    }
-    #stopButton {
-      bottom: 5%;
-    }
+  }
+    
   </style>
 </head>
 <body>
   <div id="startScreen">
     <h1>Identitours</h1>
     <p>
-      The journey starts from the definition: Words set perimeters, but also bridge rivers, carve new paths. 
-The map leads to wondrous and sometimes fantastical transformations in the garden of Buitenplaats Brienenoord: Masks — expressions of virtuality, of possibility as a reality that diverges from the word that precedes it, built with everyday means. Audio pieces guide you through a personal, evolving relationship with labels and exhibit the ways in which I reject, reclaim or reinterpret words. Your walk between points is a performative manifestation of (inner) dialogue, the space where meaning and identity are negotiated.
-
-
+      The journey starts from the definition: Words set perimeters, bridge rivers, carve new paths.
+      The map leads to wondrous and sometimes fantastical transformations in the garden of Buitenplaats Brienenoord:
+      Masks — expressions of virtuality, of possibility as a reality, built with everyday means. Audio pieces guide you
+      through my personal, evolving relationship with labels and exhibit the ways in which I reject, reclaim or reinterpret words.
+      There is something shared in the personal. Your walk between points and toggling between definition and personal semantic shift is a performative manifestation of (inner) dialogue,
+      the space where meaning and identity are negotiated. <br><br><br>INSTRUCTIONS: Walk around, in a walk that represents the journey towards changing meaning, and find the masks, my temporary stops in the negotiation of my identity. Toggle between the dictionary definition of a label and how I negotiate their meaning. 
     </p>
     <button id="startButton">Start the Walk</button>
   </div>
 
   <div id="canvas" style="display: none;">
-    <div class="definitions left">
-      <h2>what was said</h2>
-      <button class="definition-button" onclick="playDefinition(1, 'point1')">Smart</button>
-      <button class="definition-button" onclick="playDefinition(2, 'point2')">Complicated</button>
-      <button class="definition-button" onclick="playDefinition(3, 'point3')">Naive</button>
-      <button class="definition-button" onclick="playDefinition(4, 'point4')">Crazy</button>
-    </div>
-    <div class="definitions right">
-      <h2>what was said</h2>
-      <button class="definition-button" onclick="playDefinition(5, 'point5')">Caring</button>
-      <button class="definition-button" onclick="playDefinition(6, 'point6')">Wild</button>
-      <button class="definition-button" onclick="playDefinition(7, 'point7')">Stubborn</button>
-      <button class="definition-button" onclick="playDefinition(8, 'point8')">Strong</button>
-    </div>
-
     <div id="point1" class="point" style="top: 30%; left: 20%;"><span class="point-label">Smart</span></div>
     <div id="point2" class="point" style="top: 20%; left: 35%;"><span class="point-label">Complicated</span></div>
     <div id="point3" class="point" style="top: 15%; left: 50%;"><span class="point-label">Naive</span></div>
@@ -121,12 +87,24 @@ The map leads to wondrous and sometimes fantastical transformations in the garde
     <div id="point7" class="point" style="top: 70%; left: 65%;"><span class="point-label">Stubborn</span></div>
     <div id="point8" class="point" style="top: 70%; left: 35%;"><span class="point-label">Strong</span></div>
 
-    <button id="mixButton">Mix</button>
-    <button id="toggleMasksButton">Toggle Masks</button>
-    <button id="stopButton">Stop Audio</button>
+    <div id="controls" style="display: flex; justify-content: center; gap: 3em; position: absolute; bottom: 10%; left: 50%; transform: translateX(-50%);">
+  <div class="control-pair" style="display: flex; flex-direction: column; align-items: center;">
+    <label for="mixButton" style="margin-bottom: 0.3em; font-weight: bold;">Mix:</label>
+    <button id="mixButton">OFF</button>
+  </div>
+
+  <div class="control-pair" style="display: flex; flex-direction: column; align-items: center;">
+    <label for="toggleMasksButton" style="margin-bottom: 0.3em; font-weight: bold;">Toggle Masks:</label>
+    <button id="toggleMasksButton">Definition</button>
+  </div>
+
+  <div class="control-pair" style="display: flex; flex-direction: column; align-items: center;">
+    <label for="soundButton" style="margin-bottom: 0.3em; font-weight: bold;">Sound:</label>
+    <button id="soundButton">ON</button>
 
     <canvas id="lines" style="position:absolute; top:0; left:0; z-index:-1;"></canvas>
   </div>
+</div>
 
   <audio id="startAudio" src="audio/start.mp3"></audio>
   <audio id="completeAudio" src="audio/complete.mp3"></audio>
@@ -151,13 +129,62 @@ The map leads to wondrous and sometimes fantastical transformations in the garde
 
   <script>
   let isMixMode = false;
+  let isDefinitionMode = true;
+  let isSoundOn = true;
   const playedGeoPoints = new Set();
 
-  document.getElementById('mixButton').addEventListener('click', () => {
+  const mixButton = document.getElementById('mixButton');
+  const toggleMasksButton = document.getElementById('toggleMasksButton');
+  const soundButton = document.getElementById('soundButton');
+
+  mixButton.addEventListener('click', () => {
     isMixMode = !isMixMode;
-    console.log('Mix mode:', isMixMode ? 'ON' : 'OFF');
-    document.getElementById('mixButton').textContent = isMixMode ? 'Mix (ON)' : 'Mix';
+    mixButton.textContent = isMixMode ? 'ON' : 'OFF';
   });
+
+  toggleMasksButton.addEventListener('click', () => {
+    isDefinitionMode = !isDefinitionMode;
+    toggleMasksButton.textContent = isDefinitionMode ? 'Definition' : 'Semantic Shift';
+  });
+
+  soundButton.addEventListener('click', () => {
+    isSoundOn = !isSoundOn;
+    soundButton.textContent = isSoundOn ? 'ON' : 'OFF';
+
+    if (!isSoundOn) {
+    document.querySelectorAll('audio').forEach(audio => audio.pause());
+    }
+
+    document.querySelectorAll('#canvas button').forEach(btn => {
+    if (btn !== soundButton) {
+      btn.style.opacity = isSoundOn ? '1' : '0.5';
+      btn.disabled = !isSoundOn;
+    }
+  });
+});
+
+
+  function initPointListeners() {
+    for (let i = 1; i <= 8; i++) {
+      const point = document.getElementById('point' + i);
+      if (point) {
+        point.addEventListener('click', () => {
+          autoReactivateSound();
+
+          const audioId = isDefinitionMode ? 'definition' + i : 'audio' + i;
+          const audio = document.getElementById(audioId);
+
+          if (audio && isSoundOn) {
+            if (!isMixMode) stopAllAudio();
+            document.querySelectorAll('.point').forEach(p => p.classList.remove('definition-active', 'transformation-active'));
+            audio.play();
+            point.classList.add(isDefinitionMode ? 'definition-active' : 'transformation-active');
+            checkAllPointsActivated();
+          }
+        });
+      }
+    }
+  }
 
   document.getElementById('startButton').addEventListener('click', () => {
     if (typeof AudioContext !== 'undefined' || typeof webkitAudioContext !== 'undefined') {
@@ -192,7 +219,6 @@ The map leads to wondrous and sometimes fantastical transformations in the garde
                 const domPoint = document.getElementById(point.pointId);
 
                 if (audio && domPoint && audio.paused && !playedGeoPoints.has(point.audioId)) {
-
                   if (!isMixMode) {
                     geoPoints.forEach(other => {
                       if (other.audioId !== point.audioId) {
@@ -204,14 +230,15 @@ The map leads to wondrous and sometimes fantastical transformations in the garde
                       }
                     });
                   }
+                  autoReactivateSound();
                   audio.play();
-                  domPoint.classList.add('active');
+                  domPoint.classList.add('transformation-active');
                   checkAllPointsActivated();
                   playedGeoPoints.add(point.audioId);
 
                   audio.onended = () => {
                     playedGeoPoints.delete(point.audioId);
-                    domPoint.classList.remove('active');
+                    domPoint.classList.remove('transformation-active');
                   };
                 }
               }
@@ -226,80 +253,57 @@ The map leads to wondrous and sometimes fantastical transformations in the garde
       };
       startAudio.play().catch(err => {
         console.error("Start audio could not be played:", err);
-        startAudioFinished = true;
       });
     }
   });
-
-  const geoAudioIds = ['audio1', 'audio2', 'audio3', 'audio4', 'audio5', 'audio6', 'audio7', 'audio8'];
-
-  geoAudioIds.forEach(id => {
-    const audio = document.getElementById(id);
-    if (audio) {
-      audio.load();
-      audio.play().then(() => {
-        audio.pause();
-        audio.currentTime = 0;
-      }).catch(err => {
-        console.error(`Failed to pre-play audio "${id}":`, err);
-      });
-    }
-  });
-
-  function playDefinition(audioIndex, pointId) {
-    const audio = document.getElementById('definition' + audioIndex);
-    const point = document.getElementById(pointId);
-
-    document.querySelectorAll('.point').forEach(p => p.classList.remove('active'));
-
-    if (audio) {
-      audio.play();
-      audio.onended = () => {
-        if (point) {
-          point.classList.add('active');
-          checkAllPointsActivated();
-        } else {
-          console.warn(`Element with ID '${pointId}' not found.`);
-        }
-      };
-    }
-  }
 
   function checkAllPointsActivated() {
-    const allActive = [...document.querySelectorAll('.point')].every(p => p.classList.contains('active'));
+    const allActive = [...document.querySelectorAll('.point')].every(p => p.classList.contains('transformation-active') || p.classList.contains('definition-active'));
     if (allActive) {
       const completeAudio = document.getElementById('completeAudio');
       if (completeAudio) completeAudio.play();
-
-      document.querySelectorAll('.point').forEach(p => {
-        p.style.pointerEvents = 'none';
-      });
+      document.querySelectorAll('.point').forEach(p => p.style.pointerEvents = 'none');
     }
   }
 
-  function initPointListeners() {
-    for (let i = 1; i <= 8; i++) {
-      const point = document.getElementById('point' + i);
-      if (point) {
-        point.addEventListener('click', () => {
-          const audio = document.getElementById('audio' + i);
-          if (audio) audio.play();
+  function stopAllAudio() {
+    isMixMode = false;
+    mixButton.textContent = 'OFF';
+    document.querySelectorAll('audio').forEach(audio => {
+        audio.pause();
+        audio.currentTime = 0;
+    });
+  }
+
+  function autoReactivateSound() {
+    if (!isSoundOn) {
+    isSoundOn = true;
+    soundButton.textContent = 'ON';
+    document.querySelectorAll('#canvas button').forEach(btn => {
+      if (btn !== soundButton) {
+        btn.style.opacity = '1';
+        btn.disabled = false;
+      }
+    });
+  }
+}
+
+  window.addEventListener('load', () => {
+    initPointListeners();
+    const geoAudioIds = ['audio1','audio2','audio3','audio4','audio5','audio6','audio7','audio8'];
+    geoAudioIds.forEach(id => {
+      const audio = document.getElementById(id);
+      if (audio) {
+        audio.load();
+        audio.play().then(() => {
+          audio.pause();
+          audio.currentTime = 0;
+        }).catch(err => {
+          console.error(`Failed to pre-play audio "${id}":`, err);
         });
       }
-    }
-  }
-
-  document.getElementById('stopButton').addEventListener('click', () => {
-    isMixMode = false;
-    document.getElementById('mixButton').textContent = 'Mix';
-
-    document.querySelectorAll('audio').forEach(audio => {
-      audio.pause();
-      audio.currentTime = 0;
     });
   });
-
-  window.addEventListener('load', initPointListeners);
 
   const geoPoints = [
     { lat: 52.09025, lon: 4.27061, radius: 3, audioId: 'audio1', pointId: 'point1' },
@@ -312,3 +316,5 @@ The map leads to wondrous and sometimes fantastical transformations in the garde
     { lat: 52.09023, lon: 4.26856, radius: 3, audioId: 'audio8', pointId: 'point8' }
   ];
 </script>
+</body>
+</html>
