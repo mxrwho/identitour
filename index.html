@@ -220,6 +220,7 @@
           const latDiff = (latitude - point.lat) * 111000;
           const lonDiff = (longitude - point.lon) * 111000 * Math.cos(latitude * Math.PI / 180);
           const dist = Math.sqrt(latDiff * latDiff + lonDiff * lonDiff);
+          console.log(`Distance to ${point.pointId}: ${dist.toFixed(2)} meters`);
 
           if (dist < point.radius) {
             const audio = document.getElementById(point.audioId);
@@ -335,14 +336,14 @@
   });
 
   const geoPoints = [
-    { lat: 52.09025, lon: 4.27061, radius: 3, audioId: 'audio1', pointId: 'point1' },
-    { lat: 52.09029, lon: 4.27034, radius: 3, audioId: 'audio2', pointId: 'point2' },
-    { lat: 52.09032, lon: 4.27005, radius: 3, audioId: 'audio3', pointId: 'point3' },
-    { lat: 52.09031, lon: 4.26976, radius: 3, audioId: 'audio4', pointId: 'point4' },
-    { lat: 52.09031, lon: 4.26941, radius: 3, audioId: 'audio5', pointId: 'point5' },
-    { lat: 52.09027, lon: 4.26919, radius: 3, audioId: 'audio6', pointId: 'point6' },
-    { lat: 52.09027, lon: 4.26884, radius: 3, audioId: 'audio7', pointId: 'point7' },
-    { lat: 52.09023, lon: 4.26856, radius: 3, audioId: 'audio8', pointId: 'point8' }
+    { lat: 52.09025, lon: 4.27061, radius: 10, audioId: 'audio1', pointId: 'point1' },
+    { lat: 52.09029, lon: 4.27034, radius: 10, audioId: 'audio2', pointId: 'point2' },
+    { lat: 52.09032, lon: 4.27005, radius: 10, audioId: 'audio3', pointId: 'point3' },
+    { lat: 52.09031, lon: 4.26976, radius: 10, audioId: 'audio4', pointId: 'point4' },
+    { lat: 52.09031, lon: 4.26941, radius: 10, audioId: 'audio5', pointId: 'point5' },
+    { lat: 52.09027, lon: 4.26919, radius: 10, audioId: 'audio6', pointId: 'point6' },
+    { lat: 52.09027, lon: 4.26884, radius: 10, audioId: 'audio7', pointId: 'point7' },
+    { lat: 52.09023, lon: 4.26856, radius: 10, audioId: 'audio8', pointId: 'point8' }
   ];
 </script>
 </body>
