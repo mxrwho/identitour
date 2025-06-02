@@ -131,6 +131,8 @@
   let isMixMode = false;
   let isDefinitionMode = true;
   let isSoundOn = true;
+  let geolocationStarted = false;
+  let startAudio = document.getElementById('startAudio');
   const playedGeoPoints = new Set();
 
   const mixButton = document.getElementById('mixButton');
@@ -152,17 +154,16 @@
     soundButton.textContent = isSoundOn ? 'ON' : 'OFF';
 
     if (!isSoundOn) {
-    document.querySelectorAll('audio').forEach(audio => audio.pause());
+      document.querySelectorAll('audio').forEach(audio => audio.pause());
     }
 
     document.querySelectorAll('#canvas button').forEach(btn => {
-    if (btn !== soundButton) {
-      btn.style.opacity = isSoundOn ? '1' : '0.5';
-      btn.disabled = !isSoundOn;
-    }
+      if (btn !== soundButton) {
+        btn.style.opacity = isSoundOn ? '1' : '0.5';
+        btn.disabled = !isSoundOn;
+      }
+    });
   });
-});
-
 
   function initPointListeners() {
     for (let i = 1; i <= 8; i++) {
@@ -170,7 +171,6 @@
       if (point) {
         point.addEventListener('click', () => {
           autoReactivateSound();
-
           const audioId = isDefinitionMode ? 'definition' + i : 'audio' + i;
           const audio = document.getElementById(audioId);
 
@@ -199,94 +199,123 @@
     document.getElementById('startScreen').style.display = 'none';
     document.getElementById('canvas').style.display = 'block';
 
-    const startAudio = document.getElementById('startAudio');
     if (startAudio) {
       startAudio.load();
-      startAudio.onended = () => {
-        console.log('Start audio finished, geolocation audio can start');
-
-        if (navigator.geolocation) {
-          navigator.geolocation.watchPosition(position => {
-            const { latitude, longitude } = position.coords;
-
-            geoPoints.forEach(point => {
-              const latDiff = (latitude - point.lat) * 111000;
-              const lonDiff = (longitude - point.lon) * 111000 * Math.cos(latitude * Math.PI / 180);
-              const dist = Math.sqrt(latDiff * latDiff + lonDiff * lonDiff);
-
-              if (dist < point.radius) {
-                const audio = document.getElementById(point.audioId);
-                const domPoint = document.getElementById(point.pointId);
-
-                if (audio && domPoint && audio.paused && !playedGeoPoints.has(point.audioId)) {
-                  if (!isMixMode) {
-                    geoPoints.forEach(other => {
-                      if (other.audioId !== point.audioId) {
-                        const otherAudio = document.getElementById(other.audioId);
-                        if (otherAudio) {
-                          otherAudio.pause();
-                          otherAudio.currentTime = 0;
-                        }
-                      }
-                    });
-                  }
-                  autoReactivateSound();
-                  audio.play();
-                  domPoint.classList.add('transformation-active');
-                  checkAllPointsActivated();
-                  playedGeoPoints.add(point.audioId);
-
-                  audio.onended = () => {
-                    playedGeoPoints.delete(point.audioId);
-                    domPoint.classList.remove('transformation-active');
-                  };
-                }
-              }
-            });
-          }, error => {
-            console.error('Geolocation error:', error.message);
-            alert("Geolocation error: " + error.message);
-          }, { enableHighAccuracy: true });
-        } else {
-          alert("Geolocation is not supported by this browser.");
-        }
-      };
       startAudio.play().catch(err => {
         console.error("Start audio could not be played:", err);
       });
     }
   });
 
-  function checkAllPointsActivated() {
-    const allActive = [...document.querySelectorAll('.point')].every(p => p.classList.contains('transformation-active') || p.classList.contains('definition-active'));
-    if (allActive) {
-      const completeAudio = document.getElementById('completeAudio');
-      if (completeAudio) completeAudio.play();
-      document.querySelectorAll('.point').forEach(p => p.style.pointerEvents = 'none');
+  function initGeolocation() {
+    if (geolocationStarted) return;
+    geolocationStarted = true;
+    console.log("Geolocation started.");
+
+    if (navigator.geolocation) {
+      navigator.geolocation.watchPosition(position => {
+        const { latitude, longitude } = position.coords;
+
+        geoPoints.forEach(point => {
+          const latDiff = (latitude - point.lat) * 111000;
+          const lonDiff = (longitude - point.lon) * 111000 * Math.cos(latitude * Math.PI / 180);
+          const dist = Math.sqrt(latDiff * latDiff + lonDiff * lonDiff);
+
+          if (dist < point.radius) {
+            const audio = document.getElementById(point.audioId);
+            const domPoint = document.getElementById(point.pointId);
+
+            if (audio && domPoint && audio.paused && !playedGeoPoints.has(point.audioId)) {
+              if (!isMixMode) {
+                geoPoints.forEach(other => {
+                  if (other.audioId !== point.audioId) {
+                    const otherAudio = document.getElementById(other.audioId);
+                    if (otherAudio) {
+                      otherAudio.pause();
+                      otherAudio.currentTime = 0;
+                    }
+                  }
+                });
+              }
+
+              autoReactivateSound();
+              audio.play();
+              domPoint.classList.add('transformation-active');
+              checkAllPointsActivated();
+              playedGeoPoints.add(point.audioId);
+
+              audio.onended = () => {
+                playedGeoPoints.delete(point.audioId);
+                domPoint.classList.remove('transformation-active');
+              };
+            }
+          }
+        });
+      }, error => {
+        console.error('Geolocation error:', error.message);
+        alert("Geolocation error: " + error.message);
+      }, { enableHighAccuracy: true });
+    } else {
+      alert("Geolocation is not supported by this browser.");
     }
+  }
+
+  if (startAudio) {
+    startAudio.load();
+
+    startAudio.onended = () => {
+      console.log("Start audio finished.");
+      initGeolocation();
+    };
+
+    startAudio.onerror = () => {
+      console.log("Start audio error.");
+      initGeolocation();
+    };
+
+    const originalPause = startAudio.pause;
+    startAudio.pause = function () {
+      if (!geolocationStarted && !startAudio.ended) {
+        console.log("Start audio manually stopped.");
+        initGeolocation();
+      }
+      originalPause.call(this);
+    };
   }
 
   function stopAllAudio() {
     isMixMode = false;
     mixButton.textContent = 'OFF';
     document.querySelectorAll('audio').forEach(audio => {
-        audio.pause();
-        audio.currentTime = 0;
+      audio.pause();
+      audio.currentTime = 0;
     });
   }
 
   function autoReactivateSound() {
     if (!isSoundOn) {
-    isSoundOn = true;
-    soundButton.textContent = 'ON';
-    document.querySelectorAll('#canvas button').forEach(btn => {
-      if (btn !== soundButton) {
-        btn.style.opacity = '1';
-        btn.disabled = false;
-      }
-    });
+      isSoundOn = true;
+      soundButton.textContent = 'ON';
+      document.querySelectorAll('#canvas button').forEach(btn => {
+        if (btn !== soundButton) {
+          btn.style.opacity = '1';
+          btn.disabled = false;
+        }
+      });
+    }
   }
-}
+
+  function checkAllPointsActivated() {
+    const allActive = [...document.querySelectorAll('.point')].every(p =>
+      p.classList.contains('transformation-active') || p.classList.contains('definition-active')
+    );
+
+    if (allActive) {
+      const completeAudio = document.getElementById('completeAudio');
+      if (completeAudio) completeAudio.play();
+      document.querySelectorAll('.point').forEach(p => p.style.pointerEvents = 'none');
+    }
+  }
 
   window.addEventListener('load', () => {
     initPointListeners();
