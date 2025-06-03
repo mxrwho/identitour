@@ -202,7 +202,7 @@
       }
     }
   }
-
+  document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('startButton').addEventListener('click', () => {
     requestWakeLock();
     if (typeof AudioContext !== 'undefined' || typeof webkitAudioContext !== 'undefined') {
