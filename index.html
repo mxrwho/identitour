@@ -132,6 +132,7 @@
   let isDefinitionMode = false;
   let isSoundOn = true;
   let geolocationStarted = false;
+  let wakeLock = null;
   let startAudio = document.getElementById('startAudio');
   const playedGeoPoints = new Set();
 
@@ -165,6 +166,22 @@
     });
   });
 
+  async function requestWakeLock() {
+  try {
+    if ('wakeLock' in navigator) {
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release', () => {
+        console.log('Screen Wake Lock was released');
+      });
+      console.log('Screen Wake Lock is active');
+    } else {
+      console.log('Wake Lock API not supported on this browser.');
+    }
+  } catch (err) {
+    console.error('Failed to acquire wake lock:', err);
+  }
+}
+
   function initPointListeners() {
     for (let i = 1; i <= 8; i++) {
       const point = document.getElementById('point' + i);
@@ -187,6 +204,7 @@
   }
 
   document.getElementById('startButton').addEventListener('click', () => {
+    requestWakeLock();
     if (typeof AudioContext !== 'undefined' || typeof webkitAudioContext !== 'undefined') {
       const audioCtx = new (AudioContext || webkitAudioContext)();
       if (audioCtx.state === 'suspended') {
@@ -220,11 +238,11 @@
           const latDiff = (latitude - point.lat) * 111000;
           const lonDiff = (longitude - point.lon) * 111000 * Math.cos(latitude * Math.PI / 180);
           const dist = Math.sqrt(latDiff * latDiff + lonDiff * lonDiff);
+          const audio = document.getElementById(point.audioId);
+          const domPoint = document.getElementById(point.pointId);
           console.log(`Distance to ${point.pointId}: ${dist.toFixed(2)} meters`);
 
           if (dist < point.radius) {
-            const audio = document.getElementById(point.audioId);
-            const domPoint = document.getElementById(point.pointId);
 
             if (audio && domPoint && audio.paused && !playedGeoPoints.has(point.audioId)) {
               if (!isMixMode) {
@@ -250,15 +268,26 @@
                 domPoint.classList.remove('transformation-active');
               };
             }
-          }
-        });
+          } else {
+             if (playedGeoPoints.has(point.audioId)) {
+              playedGeoPoints.delete(point.audioId);
+              if (audio) {
+                audio.pause();
+                audio.currentTime = 0;
+        }
+        if (domPoint) {
+          domPoint.classList.remove('transformation-active');
+        }
+      }
+    }
+  });    
+
       }, error => {
         console.error('Geolocation error:', error.message);
         alert("Geolocation error: " + error.message);
       }, { enableHighAccuracy: true });
     } else {
       alert("Geolocation is not supported by this browser.");
-    }
   }
 
   if (startAudio) {
@@ -345,6 +374,44 @@
     { lat: 51.89959569, lon: 4.53518673, radius: 5, audioId: 'audio7', pointId: 'point7' },
     { lat: 51.89956310, lon: 4.53493921, radius: 5, audioId: 'audio8', pointId: 'point8' }
   ];
+
+  document.addEventListener("DOMContentLoaded", function () {
+  const params = new URLSearchParams(window.location.search);
+  const audioId = params.get('audio');
+
+  if (audioId) {
+    document.getElementById('startScreen').style.display = 'none';
+    document.getElementById('canvas').style.display = 'block';
+
+    if (audioId.startsWith('definition')) {
+      isDefinitionMode = true;
+      toggleMasksButton.textContent = 'Definition';
+    } else {
+      isDefinitionMode = false;
+      toggleMasksButton.textContent = 'Semantic Shift';
+    }
+
+    initPointListeners();
+
+    const audio = document.getElementById(audioId);
+    if (audio && isSoundOn) {
+      stopAllAudio();
+      audio.play();
+
+      const pointIndex = audioId.match(/\d+$/);
+      if (pointIndex) {
+        const pointEl = document.getElementById('point' + pointIndex[0]);
+        if (pointEl) {
+          document.querySelectorAll('.point').forEach(p =>
+            p.classList.remove('definition-active', 'transformation-active'));
+          pointEl.classList.add(isDefinitionMode ? 'definition-active' : 'transformation-active');
+        }
+      }
+    }
+
+    initGeolocation();
+  }
+});
 </script>
 </body>
 </html>
