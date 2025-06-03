@@ -204,7 +204,6 @@
   }
   document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('startButton').addEventListener('click', () => {
-    requestWakeLock();
     if (typeof AudioContext !== 'undefined' || typeof webkitAudioContext !== 'undefined') {
       const audioCtx = new (AudioContext || webkitAudioContext)();
       if (audioCtx.state === 'suspended') {
