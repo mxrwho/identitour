@@ -6,7 +6,7 @@
   <title>Identitours</title>
   <style>
     body {
-      margin: 0;
+ margin: 0;
       font-family: Arial, sans-serif;
       background-color: #f0f0f0;
       color: #333;
@@ -22,6 +22,19 @@
       margin: 0.5em 1em;
       padding: 0.5em 1em;
       font-size: 1em;
+    }
+    #startButton {
+      background-color: #ffd45f;
+      border: none;
+      color: #333;
+      padding: 0.5em 1em;
+      ont-size: 1em;
+      cursor: pointer;
+      border-radius: 0.3em;
+      transition: background-color 0.3s;
+    }
+    #startButton:hover {
+      background-color: #ffcc33;
     }
     #canvas {
       position: relative;
@@ -62,25 +75,26 @@
         left: 50%;
         transform: translateX(-50%);
     }
-
+    
     @media (max-width: 600px) {
     .point-label {
       font-size: 0.7;
     }  
-  }
-    
+  }   
   </style>
 </head>
 <body>
   <div id="startScreen">
-    <h1>Identitours</h1>
+    <h1>
+      <img src="identitours_logo.png" alt="Identitours Logo" style="max-width: 30%; height: auto;">
+    </h1>
     <p>
       The journey starts from the definition: Words set perimeters, bridge rivers, carve new paths.
       The map leads to wondrous and sometimes fantastical transformations in the garden of Buitenplaats Brienenoord:
       Masks — expressions of virtuality, of possibility as a reality, built with everyday means. Audio pieces guide you
       through my personal, evolving relationship with labels and exhibit the ways in which I reject, reclaim or reinterpret words.
       There is something shared in the personal. Your walk between points and toggling between definition and personal semantic shift is a performative manifestation of (inner) dialogue,
-      the space where meaning and identity are negotiated. <br><br><br>INSTRUCTIONS: Walk around, in a walk that represents the journey towards changing meaning, and find the masks, my temporary stops in the negotiation of identity. Toggle between the dictionary definition of a label and my interpretation. 
+      the space where meaning and identity are negotiated. <br><br><br>INSTRUCTIONS: Walk around, in a walk that represents the journey towards changing meaning, and find the masks, my temporary stops in the negotiation of identity. 
     </p>
     <button id="startButton">Start the Walk</button>
   </div>
