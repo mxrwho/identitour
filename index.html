@@ -50,7 +50,6 @@
       white-space: nowrap;
     }
 
-@media (max-width: 600px) {
     #controls {
         flex-direction: column;
         align-items: center;
@@ -59,6 +58,11 @@
         left: 50%;
         transform: translateX(-50%);
     }
+
+    @media (max-width: 600px) {
+    .point-label {
+      font-size: 0.7;
+    }  
   }
     
   </style>
@@ -72,7 +76,7 @@
       Masks — expressions of virtuality, of possibility as a reality, built with everyday means. Audio pieces guide you
       through my personal, evolving relationship with labels and exhibit the ways in which I reject, reclaim or reinterpret words.
       There is something shared in the personal. Your walk between points and toggling between definition and personal semantic shift is a performative manifestation of (inner) dialogue,
-      the space where meaning and identity are negotiated. <br><br><br>INSTRUCTIONS: Walk around and find the masks, my temporary stops in the negotiation of identity. Listen to the audio for a personal interpretation of labels.
+      the space where meaning and identity are negotiated. <br><br><br>INSTRUCTIONS: Walk around, in a walk that represents the journey towards changing meaning, and find the masks, my temporary stops in the negotiation of identity. Toggle between the dictionary definition of a label and my interpretation. 
     </p>
     <button id="startButton">Start the Walk</button>
   </div>
@@ -94,9 +98,9 @@
   </div>
 
   <div class="control-pair" style="display: flex; flex-direction: column; align-items: center;">
-    <label for="toggleMasksButton" style="margin-bottom: 0.3em; font-weight: bold;">Toggle Masks:</label>
-    <button id="toggleMasksButton">Definition</button>
-  </div>
+  <label for="echoButton" style="margin-bottom: 0.3em; font-weight: bold;">Echo:</label>
+  <button id="echoButton">OFF</button>
+</div>
 
   <div class="control-pair" style="display: flex; flex-direction: column; align-items: center;">
     <label for="soundButton" style="margin-bottom: 0.3em; font-weight: bold;">Sound:</label>
@@ -118,25 +122,17 @@
   <audio id="audio7" src="audio/stubborn.mp3"></audio>
   <audio id="audio8" src="audio/strong.mp3"></audio>
 
-  <audio id="definition1" src="audio/smart_Now.mp3"></audio>
-  <audio id="definition2" src="audio/complicated_Now.mp3"></audio>
-  <audio id="definition3" src="audio/naive_Now.mp3"></audio>
-  <audio id="definition4" src="audio/crazy_Now.mp3"></audio>
-  <audio id="definition5" src="audio/caring_Now.mp3"></audio>
-  <audio id="definition6" src="audio/wild_Now.mp3"></audio>
-  <audio id="definition7" src="audio/stubborn_Now.mp3"></audio>
-  <audio id="definition8" src="audio/strong_Now.mp3"></audio>
-
   <script>
   let isMixMode = false;
-  let isDefinitionMode = true;
+  let isEchoOn = false;
+  let audioCtx, delayNode, gainNode;
   let isSoundOn = true;
   let geolocationStarted = false;
   let startAudio = document.getElementById('startAudio');
   const playedGeoPoints = new Set();
 
   const mixButton = document.getElementById('mixButton');
-  const toggleMasksButton = document.getElementById('toggleMasksButton');
+  const echoButton = document.getElementById('echoButton');
   const soundButton = document.getElementById('soundButton');
 
   mixButton.addEventListener('click', () => {
@@ -144,10 +140,11 @@
     mixButton.textContent = isMixMode ? 'ON' : 'OFF';
   });
 
-  toggleMasksButton.addEventListener('click', () => {
-    isDefinitionMode = !isDefinitionMode;
-    toggleMasksButton.textContent = isDefinitionMode ? 'Definition' : 'Semantic Shift';
+  echoButton.addEventListener('click', () => {
+    isEchoOn = !isEchoOn;
+    echoButton.textContent = isEchoOn ? 'ON' : 'OFF';
   });
+
 
   soundButton.addEventListener('click', () => {
     isSoundOn = !isSoundOn;
@@ -170,31 +167,73 @@
       const point = document.getElementById('point' + i);
       if (point) {
         point.addEventListener('click', () => {
-          autoReactivateSound();
-          const audioId = isDefinitionMode ? 'definition' + i : 'audio' + i;
-          const audio = document.getElementById(audioId);
+  autoReactivateSound();
+  const audio = document.getElementById('audio' + i);
 
-          if (audio && isSoundOn) {
-            if (!isMixMode) stopAllAudio();
-            document.querySelectorAll('.point').forEach(p => p.classList.remove('definition-active', 'transformation-active'));
-            audio.play();
-            point.classList.add(isDefinitionMode ? 'definition-active' : 'transformation-active');
-            checkAllPointsActivated();
-          }
-        });
-      }
+if (audio && isSoundOn) {
+  if (!audioCtx) {
+    audioCtx = new (AudioContext || webkitAudioContext)();
+
+    delayNode = audioCtx.createDelay();
+    delayNode.delayTime.value = 0.3;
+
+    gainNode = audioCtx.createGain();
+    gainNode.gain.value = 0.4;
+
+    delayNode.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+  }
+
+  if (!isMixMode) stopAllAudio();
+
+  document.querySelectorAll('.point').forEach(p => p.classList.remove('transformation-active'));
+
+  if (!audio._sourceNode) {
+  const source = audioCtx.createMediaElementSource(audio);
+  audio._sourceNode = source;
+  audio._isConnectedToEcho = false;
+
+
+  source.connect(audioCtx.destination);
+}
+
+if (isEchoOn && !audio._isConnectedToEcho) {
+
+  audio._sourceNode.disconnect();
+  audio._sourceNode.connect(delayNode);
+  delayNode.connect(audioCtx.destination);
+  audio._isConnectedToEcho = true;
+} else if (!isEchoOn && audio._isConnectedToEcho) {
+
+  audio._sourceNode.disconnect();
+  audio._sourceNode.connect(audioCtx.destination);
+  audio._isConnectedToEcho = false;
+}
+
+
+  audio.play();
+  point.classList.add('transformation-active');
+  checkAllPointsActivated();
+}
+
+      });
     }
   }
+}
 
   document.getElementById('startButton').addEventListener('click', () => {
     if (typeof AudioContext !== 'undefined' || typeof webkitAudioContext !== 'undefined') {
-      const audioCtx = new (AudioContext || webkitAudioContext)();
-      if (audioCtx.state === 'suspended') {
-        audioCtx.resume().then(() => {
-          console.log('AudioContext resumed');
-        });
-      }
-    }
+    audioCtx = new (AudioContext || webkitAudioContext)();
+
+    delayNode = audioCtx.createDelay();
+    delayNode.delayTime.value = 0.3;
+
+    gainNode = audioCtx.createGain();
+    gainNode.gain.value = 0.4;
+
+    delayNode.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+  }
 
     document.getElementById('startScreen').style.display = 'none';
     document.getElementById('canvas').style.display = 'block';
@@ -240,6 +279,17 @@
               }
 
               autoReactivateSound();
+              if (!audio._sourceNode) {
+              const source = audioCtx.createMediaElementSource(audio);
+              audio._sourceNode = source; 
+      
+              if (isEchoOn) {
+              source.connect(delayNode);
+              delayNode.connect(audioCtx.destination);
+          } else {
+              source.connect(audioCtx.destination);
+            }
+          }
               audio.play();
               domPoint.classList.add('transformation-active');
               checkAllPointsActivated();
