@@ -23,7 +23,8 @@
     #canvas {
       position: relative;
       height: 100vh;
-      background: #fff;
+      background: url('background_web.png') no-repeat center center;
+      background-size: cover;
       overflow: hidden;
     }
     .point {
@@ -106,7 +107,7 @@
     <label for="soundButton" style="margin-bottom: 0.3em; font-weight: bold;">Sound:</label>
     <button id="soundButton">ON</button>
 
-    <canvas id="lines" style="position:absolute; top:0; left:0; z-index:-1;"></canvas>
+  <canvas id="lines" style="position:absolute; top:0; left:0; z-index:-1; pointer-events: none;"></canvas>
   </div>
 </div>
 
