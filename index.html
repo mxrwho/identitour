@@ -6,7 +6,7 @@
   <title>Identitours</title>
   <style>
     body {
- margin: 0;
+      margin: 0;
       font-family: Arial, sans-serif;
       background-color: #f0f0f0;
       color: #333;
@@ -75,12 +75,13 @@
         left: 50%;
         transform: translateX(-50%);
     }
-    
+
     @media (max-width: 600px) {
     .point-label {
       font-size: 0.7;
     }  
-  }   
+  }
+    
   </style>
 </head>
 <body>
@@ -94,12 +95,13 @@
       Masks — expressions of virtuality, of possibility as a reality, built with everyday means. Audio pieces guide you
       through my personal, evolving relationship with labels and exhibit the ways in which I reject, reclaim or reinterpret words.
       There is something shared in the personal. Your walk between points is a performative manifestation of (inner) dialogue,
-      the space where meaning and identity are negotiated.<br><br><br>INSTRUCTIONS: Walk around, in a walk that represents the journey towards changing meaning, and find the masks, my temporary stops in the negotiation of identity.<br><br> 
+      the space where meaning and identity are negotiated.
+      <br><br><br>INSTRUCTIONS: Walk around, in a walk that represents the journey towards changing meaning, and find the masks, my temporary stops in the negotiation of identity.<br><br> 
     </p>
     <button id="startButton">Start the Walk</button>
     <p><br><br><img src="frame_start.png" alt="Start" style="max-width: 10%; height: auto;"></p>
   </div>
-  
+
   <div id="canvas" style="display: none;">
     <div id="point1" class="point" style="top: 30%; left: 20%;"><span class="point-label">Smart</span></div>
     <div id="point2" class="point" style="top: 20%; left: 35%;"><span class="point-label">Complicated</span></div>
@@ -124,8 +126,9 @@
   <div class="control-pair" style="display: flex; flex-direction: column; align-items: center;">
     <label for="soundButton" style="margin-bottom: 0.3em; font-weight: bold;">Sound:</label>
     <button id="soundButton">ON</button>
+    <button id="backButton" style="margin-left: 10px;">Go to Start</button>
 
-  <canvas id="lines" style="position:absolute; top:0; left:0; z-index:-1; pointer-events: none;"></canvas>
+    <canvas id="lines" style="position:absolute; top:0; left:0; z-index:-1; pointer-events: none;"></canvas>
   </div>
 </div>
 
@@ -180,6 +183,12 @@
       }
     });
   });
+
+  document.getElementById('backButton').addEventListener('click', () => {
+  document.getElementById('canvas').style.display = 'none';
+  document.getElementById('startScreen').style.display = 'block';
+  stopAllAudio();
+});
 
   function initPointListeners() {
     for (let i = 1; i <= 8; i++) {
@@ -324,12 +333,17 @@ if (isEchoOn && !audio._isConnectedToEcho) {
       }, error => {
         console.error('Geolocation error:', error.message);
         alert("Geolocation error: " + error.message);
-      }, { enableHighAccuracy: true });
+      }, 
+      { enableHighAccuracy: true,
+        timeout: 5000,
+        maximumAge: 0
+         }
+      );
     } else {
       alert("Geolocation is not supported by this browser.");
     }
   }
-
+  
   if (startAudio) {
     startAudio.load();
 
@@ -422,7 +436,7 @@ if (isEchoOn && !audio._isConnectedToEcho) {
     }
   }
 });
-    
+
   const geoPoints = [
      { lat: 51.89935860, lon: 4.53528384, radius: 5, audioId: 'audio1', pointId: 'point1' },
     { lat: 51.89950160, lon: 4.53521330, radius: 5, audioId: 'audio2', pointId: 'point2' },
