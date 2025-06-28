@@ -316,18 +316,19 @@ if (isEchoOn && !audio._isConnectedToEcho) {
               }
 
               autoReactivateSound();
-              if (!audio._sourceNode) {
-              const source = audioCtx.createMediaElementSource(audio);
-              audio._sourceNode = source; 
-      
-              if (isEchoOn) {
-              source.connect(delayNode);
-              delayNode.connect(audioCtx.destination);
-          } else {
-              source.connect(audioCtx.destination);
-            }
+              if (!audio._sourceNode && audioCtx) {
+                const source = audioCtx.createMediaElementSource(audio);
+                audio._sourceNode = source;
+                source.connect(audioCtx.destination);
+
+              }
           }
-              audio.play();
+
+              audio.load(); 
+              audio.play().catch(err => {
+              console.error(`Failed to autoplay audio for ${hash}:`, err);
+            });
+
               domPoint.classList.add('transformation-active');
               checkAllPointsActivated();
               playedGeoPoints.add(point.audioId);
