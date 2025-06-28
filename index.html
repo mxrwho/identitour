@@ -426,25 +426,22 @@ if (isEchoOn && !audio._isConnectedToEcho) {
       }
     });
 
-    const hash = window.location.hash;
-    if (hash && /^#point[1-8]$/.test(hash)) {
-      const pointElement = document.querySelector(hash);
+        const hash = window.location.hash;
+      if (hash && /^#point[1-8]$/.test(hash)) {
+        const pointElement = document.querySelector(hash);
+        const pointIndex = hash.replace('#point', '');
+        const audio = document.getElementById(`audio${pointIndex}`);
+    
       if (pointElement) {
-     
-      document.getElementById('startScreen').style.display = 'none';
-      document.getElementById('canvas').style.display = 'block';
+        document.getElementById('startScreen').style.display = 'none';
+        document.getElementById('canvas').style.display = 'block';
 
-      if (startAudio) {
-        startAudio.pause();
-        startAudio.currentTime = 0;
+        setTimeout(() => {
+          pointElement.click();
+        }, 1000);
       }
-
-      setTimeout(() => {
-        pointElement.click();
-      }, 500);
     }
-  }
-});
+  });
 
   const geoPoints = [
      { lat: 51.89935860, lon: 4.53528384, radius: 5, audioId: 'audio1', pointId: 'point1' },
