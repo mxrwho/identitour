@@ -382,6 +382,15 @@ if (isEchoOn && !audio._isConnectedToEcho) {
     document.querySelectorAll('audio').forEach(audio => {
       audio.pause();
       audio.currentTime = 0;
+
+    if (audio._sourceNode) {
+      try {
+        audio._sourceNode.disconnect();
+      } catch (e) {
+        console.warn("Source node already disconnected or error:", e);
+      }
+      audio._sourceNode = null;
+    }
     });
   }
 
