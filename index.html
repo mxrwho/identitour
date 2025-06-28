@@ -211,10 +211,7 @@ if (audio && isSoundOn) {
     gainNode.gain.value = 0.4;
 
     delayNode.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
   }
-
-  if (!isMixMode) stopAllAudio();
 
   document.querySelectorAll('.point').forEach(p => p.classList.remove('transformation-active'));
 
@@ -262,7 +259,6 @@ if (isEchoOn && !audio._isConnectedToEcho) {
     gainNode.gain.value = 0.4;
 
     delayNode.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
   }
 
     document.getElementById('startScreen').style.display = 'none';
@@ -324,11 +320,7 @@ if (isEchoOn && !audio._isConnectedToEcho) {
               }
           }
 
-              audio.load(); 
-              audio.play().catch(err => {
-              console.error(`Failed to autoplay audio for ${hash}:`, err);
-            });
-
+              audio.play().then(() => {
               domPoint.classList.add('transformation-active');
               checkAllPointsActivated();
               playedGeoPoints.add(point.audioId);
@@ -337,9 +329,12 @@ if (isEchoOn && !audio._isConnectedToEcho) {
                 playedGeoPoints.delete(point.audioId);
                 domPoint.classList.remove('transformation-active');
               };
-            }
+            }).catch(err => {
+              console.error(`Failed to autoplay audio for ${point.audioId}:`, err);
+            });
           }
         });
+
       }, error => {
         console.error('Geolocation error:', error.message);
         alert("Geolocation error: " + error.message);
