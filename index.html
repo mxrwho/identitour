@@ -175,6 +175,7 @@
   let isSoundOn = true;
   let geolocationStarted = false;
   let startAudio = document.getElementById('startAudio');
+  let launchedFromQR = false;
   const playedGeoPoints = new Set();
 
   const mixButton = document.getElementById('mixButton');
@@ -453,7 +454,7 @@
 
         const hash = window.location.hash;
       if (hash && /^#point[1-8]$/.test(hash)) {
-
+        launchedFromQR = true;
         document.getElementById('startScreen').style.display = 'none';
         document.getElementById('canvas').style.display = 'block';
 
@@ -466,9 +467,8 @@
         const audio = document.getElementById(`audio${pointIndex}`);
     
       if (pointElement && audio) {
-
         const overlay = document.getElementById('tapOverlay');
-        if (overlay) {
+        if (overlay && launchedFromQR) {
           overlay.style.display = 'flex';
 
           overlay.addEventListener('click', () => {
