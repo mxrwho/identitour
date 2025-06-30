@@ -129,10 +129,27 @@
     <label for="soundButton" style="margin-bottom: 0.3em; font-weight: bold;">Sound:</label>
     <button id="soundButton">ON</button><br><br>
     <button id="backButton" style="margin-left: 10px;">Go to Start</button>
+  </div>
 
     <canvas id="lines" style="position:absolute; top:0; left:0; z-index:-1; pointer-events: none;"></canvas>
+  
+
+    <div id="tapOverlay" style="
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background-color: rgba(0,0,0,0.8);
+      color: white;
+      font-size: 1.5em;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      z-index: 9999;
+      cursor: pointer;
+    ">
+      Tap to Listen<br><span style="font-size: 0.7em; opacity: 0.7;">(Required by your phone browser)</span>
   </div>
-</div>
 
   <audio id="startAudio" src="audio/start.mp3"></audio>
   <audio id="completeAudio" src="audio/complete.mp3"></audio>
@@ -197,52 +214,48 @@
       const point = document.getElementById('point' + i);
       if (point) {
         point.addEventListener('click', () => {
+        if (startAudio && !startAudio.paused) {
+          startAudio.pause();
+          startAudio.currentTime = 0;
+
+      } 
   autoReactivateSound();
+
   const audio = document.getElementById('audio' + i);
-
-if (audio && isSoundOn) {
-  if (!audioCtx) {
+  if (audio && isSoundOn) {
+    if (!audioCtx) {
     audioCtx = new (AudioContext || webkitAudioContext)();
-
     delayNode = audioCtx.createDelay();
     delayNode.delayTime.value = 0.3;
-
     gainNode = audioCtx.createGain();
     gainNode.gain.value = 0.4;
-
     delayNode.connect(gainNode);
   }
 
   document.querySelectorAll('.point').forEach(p => p.classList.remove('transformation-active'));
 
-  if (!audio._sourceNode) {
-  const source = audioCtx.createMediaElementSource(audio);
-  audio._sourceNode = source;
-  audio._isConnectedToEcho = false;
+    if (!audio._sourceNode) {
+    const source = audioCtx.createMediaElementSource(audio);
+    audio._sourceNode = source;
+    audio._isConnectedToEcho = false;
+    source.connect(audioCtx.destination);
+  }
 
+  if (isEchoOn && !audio._isConnectedToEcho) {
+      audio._sourceNode.disconnect();
+      audio._sourceNode.connect(delayNode);
+      delayNode.connect(audioCtx.destination);
+      audio._isConnectedToEcho = true;
+   } else if (!isEchoOn && audio._isConnectedToEcho) {
+    audio._sourceNode.disconnect();
+    audio._sourceNode.connect(audioCtx.destination);
+    audio._isConnectedToEcho = false;
+    }
 
-  source.connect(audioCtx.destination);
-}
-
-if (isEchoOn && !audio._isConnectedToEcho) {
-
-  audio._sourceNode.disconnect();
-  audio._sourceNode.connect(delayNode);
-  delayNode.connect(audioCtx.destination);
-  audio._isConnectedToEcho = true;
-} else if (!isEchoOn && audio._isConnectedToEcho) {
-
-  audio._sourceNode.disconnect();
-  audio._sourceNode.connect(audioCtx.destination);
-  audio._isConnectedToEcho = false;
-}
-
-
-  audio.play();
-  point.classList.add('transformation-active');
-  checkAllPointsActivated();
-}
-
+        audio.play();
+        point.classList.add('transformation-active');
+        checkAllPointsActivated();
+        }
       });
     }
   }
@@ -261,16 +274,17 @@ if (isEchoOn && !audio._isConnectedToEcho) {
     delayNode.connect(gainNode);
   }
 
-    document.getElementById('startScreen').style.display = 'none';
-    document.getElementById('canvas').style.display = 'block';
-
     if (startAudio) {
       startAudio.load();
       startAudio.play().catch(err => {
         console.error("Start audio could not be played:", err);
       });
     }
-  });
+  setTimeout(() => {
+    document.getElementById('startScreen').style.display = 'none';
+    document.getElementById('canvas').style.display = 'block';
+  }, 3500);
+});
 
   const GEOLOCATION_ENABLED = false;
 
@@ -417,6 +431,7 @@ if (isEchoOn && !audio._isConnectedToEcho) {
 
   window.addEventListener('load', () => {
     initPointListeners();
+
     const geoAudioIds = ['audio1','audio2','audio3','audio4','audio5','audio6','audio7','audio8'];
     geoAudioIds.forEach(id => {
       const audio = document.getElementById(id);
@@ -437,16 +452,34 @@ if (isEchoOn && !audio._isConnectedToEcho) {
         const pointIndex = hash.replace('#point', '');
         const audio = document.getElementById(`audio${pointIndex}`);
     
-      if (pointElement) {
-        document.getElementById('startScreen').style.display = 'none';
-        document.getElementById('canvas').style.display = 'block';
+      if (pointElement && audio) {
 
-        setTimeout(() => {
-          pointElement.click();
-        }, 1000);
+        const overlay = document.getElementById('tapOverlay');
+        if (overlay) {
+          overlay.style.display = 'flex';
+
+          overlay.addEventListener('click', () => {
+            overlay.style.display = 'none';
+
+      if (!audioCtx && (typeof AudioContext !== 'undefined' || typeof webkitAudioContext !== 'undefined')) {
+            audioCtx = new (AudioContext || webkitAudioContext)();
+          }
+
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume().catch(err => console.warn("Could not resume AudioContext:", err));
+      }
+
+          document.getElementById('startScreen').style.display = 'none';
+          document.getElementById('canvas').style.display = 'block';
+
+          setTimeout(() => {
+            pointElement.click();
+          }, 500);
+        });
       }
     }
-  });
+  }
+});
 
   const geoPoints = [
      { lat: 51.89935860, lon: 4.53528384, radius: 5, audioId: 'audio1', pointId: 'point1' },
