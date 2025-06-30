@@ -169,14 +169,16 @@
   <audio id="audio8" src="audio/strong.mp3"></audio>
 
   <script>
+
   let isMixMode = false;
   let isEchoOn = false;
   let audioCtx, delayNode, gainNode;
   let isSoundOn = true;
   let geolocationStarted = false;
   let startAudio = document.getElementById('startAudio');
-  let launchedFromQR = false;
   const playedGeoPoints = new Set();
+
+  let launchedFromQR = false;
 
   const mixButton = document.getElementById('mixButton');
   const echoButton = document.getElementById('echoButton');
@@ -268,6 +270,8 @@
 }
 
   document.getElementById('startButton').addEventListener('click', () => {
+    launchedFromQR = false;
+
     if (typeof AudioContext !== 'undefined' || typeof webkitAudioContext !== 'undefined') {
     audioCtx = new (AudioContext || webkitAudioContext)();
 
@@ -289,6 +293,11 @@
   setTimeout(() => {
     document.getElementById('startScreen').style.display = 'none';
     document.getElementById('canvas').style.display = 'block';
+    document.getElementById('tapOverlay').style.display = 'none';
+    const overlay = document.getElementById('tapOverlay');
+      if (overlay) {
+      overlay.style.display = 'none';
+    }
   }, 3500);
 });
 
@@ -468,10 +477,11 @@
     
       if (pointElement && audio) {
         const overlay = document.getElementById('tapOverlay');
+        
         if (overlay && launchedFromQR) {
           overlay.style.display = 'flex';
 
-          overlay.addEventListener('click', () => {
+          const listener = () => {
             overlay.style.display = 'none';
 
       if (audioCtx && audioCtx.state === 'suspended') {
@@ -481,7 +491,11 @@
           setTimeout(() => {
             pointElement.click();
           }, 500);
-        });
+
+        overlay.removeEventListener('click', listener);
+      };
+
+        overlay.addEventListener('click', listener);
       }
     }
   }
