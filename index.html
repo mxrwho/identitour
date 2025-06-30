@@ -448,6 +448,14 @@
 
         const hash = window.location.hash;
       if (hash && /^#point[1-8]$/.test(hash)) {
+
+        document.getElementById('startScreen').style.display = 'none';
+        document.getElementById('canvas').style.display = 'block';
+
+         if (!audioCtx && (typeof AudioContext !== 'undefined' || typeof webkitAudioContext !== 'undefined')) {
+            audioCtx = new (AudioContext || webkitAudioContext)();
+          }
+
         const pointElement = document.querySelector(hash);
         const pointIndex = hash.replace('#point', '');
         const audio = document.getElementById(`audio${pointIndex}`);
@@ -461,17 +469,10 @@
           overlay.addEventListener('click', () => {
             overlay.style.display = 'none';
 
-      if (!audioCtx && (typeof AudioContext !== 'undefined' || typeof webkitAudioContext !== 'undefined')) {
-            audioCtx = new (AudioContext || webkitAudioContext)();
-          }
-
       if (audioCtx && audioCtx.state === 'suspended') {
         audioCtx.resume().catch(err => console.warn("Could not resume AudioContext:", err));
       }
-
-          document.getElementById('startScreen').style.display = 'none';
-          document.getElementById('canvas').style.display = 'block';
-
+            
           setTimeout(() => {
             pointElement.click();
           }, 500);
